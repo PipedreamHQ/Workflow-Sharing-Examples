@@ -1,0 +1,40 @@
+schema: workflow/2022.04
+name: Daily Schedule Text
+triggers:
+- id: ti_MMTx7Q8
+steps:
+- namespace: calculate_end_of_day
+  runtime: nodejs14.x
+  uses: "./calculate_end_of_day/entry.js"
+  props:
+    timestamp: "{{steps.trigger.event.timezone_utc.iso8601.timestamp}}"
+- namespace: list_events
+  runtime: nodejs14.x
+  uses: google_calendar-list-events@0.0.1
+  props:
+    googleCalendar:
+      authProvisionId: apn_KAh4OA4
+    calendarId:
+      __lv:
+        label: pierce@pipedream.com
+        value: pierce@pipedream.com
+    timeMin: "{{steps.trigger.event.timezone_configured.iso8601.timestamp}}"
+- namespace: filter_only_confirmed_events
+  runtime: nodejs14.x
+  uses: "./filter_only_confirmed_events/entry.js"
+- namespace: generate_text
+  runtime: nodejs14.x
+  uses: "./generate_text/entry.js"
+- namespace: send_sms
+  runtime: nodejs14.x
+  uses: twilio-send-sms@0.1.3
+  props:
+    twilio:
+      authProvisionId: apn_86hM9K9
+    from:
+      __lv:
+        label: "(206) 278-2585"
+        value: "+12062782585"
+    to: '3306144619'
+    body: "{{steps.generate_text.$return_value}}"
+
